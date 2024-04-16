@@ -9,6 +9,22 @@ bun run dev
 ```
 
 `bunx --bun vite --host 0.0.0.0`
+`bun --hot run bunx --bun vite --host 0.0.0.0`
+
+`VITE v5.2.8  ready in 995 ms`
+
+## Libraries
+
+* bun add @mui/material @emotion/react @emotion/styled
+  * 50 packages installed [91.80s]
+* bun add @mui/icons-material
+  * 1 package installed [498.62s]
+* bun add react-plotly.js plotly.js
+  * 227 packages installed [119.31s]
+* bun add react-icons
+  * 1 package installed [9.06s]
+* bun add react-router-dom
+  * 3 packages installed [4.71s]
 
 ## tutorial
 
