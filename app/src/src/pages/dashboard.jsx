@@ -19,28 +19,30 @@ import LocalFloristIcon from "@mui/icons-material/LocalFlorist";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import RunningWithErrorsIcon from "@mui/icons-material/RunningWithErrors";
 import SimpleListMenu from "../components/Menu";
+import FormDialog from "../components/FormDialog";
 
 const Dashboard = () => {
   const colors = tokens("dark");
-
+  const [deviceMac, setDeviceMac] = useState('00:B0:D0:63:C2:26');
+  const urlBase ="192.168.1.58:8123"; 
   const [boxData, setBoxData] = useState([
     {
       subtitle1: "Valor sensado",
-      value1: "25°C",
+      value1: "-- °C",
       subtitle2: "Valor API",
-      value2: "23°C",
+      value2: "-- °C",
     },
     {
       subtitle1: "Sensor 1",
-      value1: "70 % RH",
+      value1: "-- % RH",
       subtitle2: "Sensor 2",
-      value2: "80 % RH",
+      value2: "-- % RH",
     },
     {
       subtitle1: "Set Point",
-      value1: "60 % RH",
+      value1: "-- % RH",
       subtitle2: "Acción",
-      value2: "ON",
+      value2: "--",
     },
   ]);
   let singletonWebSocket = null;
@@ -49,7 +51,7 @@ const Dashboard = () => {
   const [historicData, setHistoricData] = useState([]);
 
   useEffect(() => {
-    fetchHistoricData()
+    fetchHistoricData(deviceMac, urlBase)
       .then((data) => {
         updateBoxData(data);
         setHistoricData(data);
@@ -61,7 +63,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (!singletonWebSocket) {
       singletonWebSocket = new WebSocket(
-        "ws://192.168.1.58:8123/data/ws/00:B0:D0:63:C2:26"
+        `ws://${urlBase}/data/ws/${deviceMac}`
       );
       singletonWebSocket.onclose = () => {
         console.log("WebSocket disconnected");
@@ -77,6 +79,15 @@ const Dashboard = () => {
       var newData = JSON.parse(dataEvent.data);
       console.log("accepting the message ", newData);
       singletonWebSocket.send("recived");
+      
+      fetchAPIData(urlBase).then((dataApi) => {
+        newData.apiTemperature = dataApi.temperature;
+      }).catch((error) => console.error("Error fetching historic data:", error));
+      fetchSetPointData(deviceMac,urlBase).then((dataSetpoint) => {
+        newData.setpoint =dataSetpoint.setpoint
+      }).catch((error) => console.error("Error fetching historic data:", error));
+      
+      
       setHistoricData((prevData) => [...prevData, newData]);
       updateBoxData([newData]);
     };
@@ -86,12 +97,13 @@ const Dashboard = () => {
   const updateBoxData = (data) => {
     if (data.length > 0) {
       const lastData = data[data.length - 1];
+      console.log("lastData ", lastData)
       setBoxData([
         {
           subtitle1: "Valor sensado",
           value1: `${lastData.temperature} °C`,
           subtitle2: "Valor API",
-          value2: `sin definir`,
+          value2: `${lastData.apiTemperature} °C`,
         },
         {
           subtitle1: "Sensor 1",
@@ -101,7 +113,7 @@ const Dashboard = () => {
         },
         {
           subtitle1: "Set Point",
-          value1: ` sin definir % RH`,
+          value1: `${lastData.setpoint}% RH`,
           subtitle2: "Acción",
           value2: lastData.valve_satus,
         },
@@ -124,7 +136,7 @@ const Dashboard = () => {
         justifyContent="space-evenly"
         alignItems="flex-start"
       >
-        <SimpleListMenu ></SimpleListMenu>
+        <SimpleListMenu urlBase={urlBase} ></SimpleListMenu>
         <Box
           mt="25px"
           p="0 30px"
@@ -137,9 +149,10 @@ const Dashboard = () => {
           borderRadius="20px"
           backgroundColor= "#fff"
           >
-            <Typography variant="h5" fontWeight="bold" color="#000">
+            <FormDialog deviceMac={deviceMac}></FormDialog>
+            {/* <Typography variant="h5" fontWeight="bold" color="#000">
               Actualiza el setpoint de este Dispositivo
-            </Typography>
+            </Typography> */}
           </Box>
         </Box>
       </Box>
@@ -175,12 +188,26 @@ const Dashboard = () => {
           <Plot
             data={[
               {
-                ...transformedData,
+                x :transformedData.x,
+                y :transformedData.y,
+                name: 'Humedad Promedio',
                 type: "scatter",
                 mode: "lines+markers",
                 marker: {
                   size: 10,
                   color: transformedData.color,
+                },
+              },
+              {
+                x :transformedData.x,
+                y :transformedData.z,
+                name: 'Temperatura',
+                yaxis: "y2", 
+                type: "scatter",
+                mode: "lines+markers",
+                marker: {
+                  size: 10,
+                  color: "blue",
                 },
               },
             ]}
@@ -193,6 +220,12 @@ const Dashboard = () => {
               yaxis: {
                 title: "Humedad Promedio", // Etiqueta del eje Y
                 rangemode: "tozero",
+              },
+              yaxis2: {
+                title: "Temperatura", // Etiqueta del eje y2
+                overlaying: "y",
+                rangemode: "tozero",
+                side: "right", // Ubicar el eje y2 a la izquierda
               },
               font: {
                 color: "#000",
@@ -208,10 +241,10 @@ const Dashboard = () => {
 
 export default Dashboard;
 
-const fetchHistoricData = async () => {
+const fetchHistoricData = async (deviceMac, urlBase) => {
   try {
     const response = await fetch(
-      "http://192.168.1.58:8123/data/device/00:B0:D0:63:C2:26"
+      `http://${urlBase}/data/device/${deviceMac}`
     );
     if (!response.ok) {
       throw new Error("Error fetching historic data");
@@ -224,19 +257,73 @@ const fetchHistoricData = async () => {
   }
 };
 
+const fetchAPIData = async (urlBase) => {
+  // {
+  //   "city_name": "Medellín",
+  //   "city_id": "3674962",
+  //   "temperature": 20.12,
+  //   "pressure": 1024,
+  //   "description": "light rain",
+  //   "icon": "10n",
+  //   "lon": -75.5636,
+  //   "lat": 6.2518,
+  //   "weather_api_id": "500",
+  //   "humidity": 96,
+  //   "wind_speed": 1.03,
+  //   "wind_deg": 0,
+  //   "country": "CO"
+  // }
+
+  try {
+    const response = await fetch(
+      `http://${urlBase}/api/data/`
+    );
+    if (!response.ok) {
+      throw new Error("Error fetching historic data");
+    }
+    const data = await response.json();
+    console.log(data)
+    return data;
+  } catch (error) {
+    console.error("Error fetching historic data:", error);
+    throw error;
+  }
+};
+
+const fetchSetPointData = async (deviceMac, urlBase) => {
+
+  try {
+    const response = await fetch(
+      `http://${urlBase}/setpoints/device/${deviceMac}`
+    );
+    if (!response.ok) {
+      throw new Error("Error fetching historic data");
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching historic data:", error);
+    throw error;
+  }
+};
+
+
 function transformData(historicData) {
   let transformedData = {
     x: [],
     y: [],
+    z :[], 
     color: [],
   };
 
   for (let i = 0; i < historicData.length; i++) {
     let dataPoint = historicData[i];
     let avgHumidity = (dataPoint.humidity_1 + dataPoint.humidity_2) / 2;
+    let temperature = dataPoint.temperature
     let color = dataPoint.valve_satus === "ON" ? "rgb(0, 255, 0)" : "red";
-    transformedData.x.push(dataPoint.id);
+    transformedData.x.push(dataPoint.created_at);
     transformedData.y.push(avgHumidity);
+    transformedData.z.push(temperature);
     transformedData.color.push(color);
   }
 

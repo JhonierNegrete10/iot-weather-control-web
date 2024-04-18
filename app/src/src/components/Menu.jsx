@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import * as React from "react";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
@@ -7,7 +8,7 @@ import Menu from "@mui/material/Menu";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 
-export default function SimpleListMenu() {
+export default function SimpleListMenu({urlBase}) {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [selectedIndex, setSelectedIndex] = React.useState(0);
   const [options, setOptions] = React.useState([]);
@@ -20,12 +21,12 @@ export default function SimpleListMenu() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch("http://localhost:8123/device/");
+        const response = await fetch(`http://${urlBase}/device/`);
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setOptions(data.map((device) => device.mac)); 
+        setOptions(data.map((device) => device.device_mac));
       } catch (error) {
         setError(error.message);
       } finally {
@@ -34,7 +35,7 @@ export default function SimpleListMenu() {
     };
 
     fetchData();
-  }, []);
+  },  [urlBase]);
 
   const handleClickListItem = (event) => {
     setAnchorEl(event.currentTarget);
