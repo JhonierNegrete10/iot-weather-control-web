@@ -21,105 +21,25 @@ import RunningWithErrorsIcon from "@mui/icons-material/RunningWithErrors";
 import SimpleListMenu from "../components/Menu";
 import FormDialog from "../components/FormDialog";
 
+import { transformData } from "../utils/dataTransformations";
+import { useDeviceData } from "../hooks/useDeviceData";
+import { postSetpoint } from "../utils/api";
+
 const Dashboard = () => {
+  const urlBase = "192.168.1.12:8123";
+
   const colors = tokens("dark");
-  const [deviceMac, setDeviceMac] = useState('00:B0:D0:63:C2:26');
-  const urlBase ="192.168.1.58:8123"; 
-  const [boxData, setBoxData] = useState([
-    {
-      subtitle1: "Valor sensado",
-      value1: "-- °C",
-      subtitle2: "Valor API",
-      value2: "-- °C",
-    },
-    {
-      subtitle1: "Sensor 1",
-      value1: "-- % RH",
-      subtitle2: "Sensor 2",
-      value2: "-- % RH",
-    },
-    {
-      subtitle1: "Set Point",
-      value1: "-- % RH",
-      subtitle2: "Acción",
-      value2: "--",
-    },
-  ]);
-  let singletonWebSocket = null;
+  const [deviceMac, setDeviceMac] = useState("00:B0:D0:63:C2:26");
+  const { historicData, boxData, error } = useDeviceData(deviceMac, urlBase);
 
-  //! Backend
-  const [historicData, setHistoricData] = useState([]);
-
-  useEffect(() => {
-    fetchHistoricData(deviceMac, urlBase)
-      .then((data) => {
-        updateBoxData(data);
-        setHistoricData(data);
-      })
-      .catch((error) => console.error("Error fetching historic data:", error));
-
-    return () => {};
-  }, []);
-  useEffect(() => {
-    if (!singletonWebSocket) {
-      singletonWebSocket = new WebSocket(
-        `ws://${urlBase}/data/ws/${deviceMac}`
-      );
-      singletonWebSocket.onclose = () => {
-        console.log("WebSocket disconnected");
-        singletonWebSocket.send("disconnect");
-        singletonWebSocket = null;
-      };
-      singletonWebSocket.onopen = () =>
-        singletonWebSocket.send("connected to backend ws ");
-    }
-
-    singletonWebSocket.onmessage = (dataEvent) => {
-      console.log("accepting the message ", dataEvent.data);
-      var newData = JSON.parse(dataEvent.data);
-      console.log("accepting the message ", newData);
-      singletonWebSocket.send("recived");
-      
-      fetchAPIData(urlBase).then((dataApi) => {
-        newData.apiTemperature = dataApi.temperature;
-      }).catch((error) => console.error("Error fetching historic data:", error));
-      fetchSetPointData(deviceMac,urlBase).then((dataSetpoint) => {
-        newData.setpoint =dataSetpoint.setpoint
-      }).catch((error) => console.error("Error fetching historic data:", error));
-      
-      
-      setHistoricData((prevData) => [...prevData, newData]);
-      updateBoxData([newData]);
-    };
-  }, []);
-  let transformedData = transformData(historicData);
-
-  const updateBoxData = (data) => {
-    if (data.length > 0) {
-      const lastData = data[data.length - 1];
-      console.log("lastData ", lastData)
-      setBoxData([
-        {
-          subtitle1: "Valor sensado",
-          value1: `${lastData.temperature} °C`,
-          subtitle2: "Valor API",
-          value2: `${lastData.apiTemperature} °C`,
-        },
-        {
-          subtitle1: "Sensor 1",
-          value1: `${lastData.humidity_1}% RH`,
-          subtitle2: "Sensor 2",
-          value2: `${lastData.humidity_2}% RH`,
-        },
-        {
-          subtitle1: "Set Point",
-          value1: `${lastData.setpoint}% RH`,
-          subtitle2: "Acción",
-          value2: lastData.valve_satus,
-        },
-      ]);
-    }
+  const handleSetpointUpdate = (newSetpoint) => {
+    boxData[2].value1= `${newSetpoint}% RH`;
   };
+
+  const handleDeviceSelect = (newDeviceMac) => {
+    setDeviceMac(newDeviceMac);
+  };
+  const transformedData = transformData(historicData);
 
   return (
     <Box
@@ -136,7 +56,10 @@ const Dashboard = () => {
         justifyContent="space-evenly"
         alignItems="flex-start"
       >
-        <SimpleListMenu urlBase={urlBase} ></SimpleListMenu>
+        <SimpleListMenu
+          urlBase={urlBase}
+          onDeviceSelect={handleDeviceSelect}
+        ></SimpleListMenu>
         <Box
           mt="25px"
           p="0 30px"
@@ -144,15 +67,12 @@ const Dashboard = () => {
           justifyContent="space-between"
           alignItems="center"
         >
-          <Box
-          padding="20px"
-          borderRadius="20px"
-          backgroundColor= "#fff"
-          >
-            <FormDialog deviceMac={deviceMac}></FormDialog>
-            {/* <Typography variant="h5" fontWeight="bold" color="#000">
-              Actualiza el setpoint de este Dispositivo
-            </Typography> */}
+          <Box padding="20px" borderRadius="20px" backgroundColor="#fff">
+            <FormDialog
+              deviceMac={deviceMac}
+              urlBase={urlBase}
+              onSetpointUpdate={handleSetpointUpdate}
+            ></FormDialog>
           </Box>
         </Box>
       </Box>
@@ -188,9 +108,9 @@ const Dashboard = () => {
           <Plot
             data={[
               {
-                x :transformedData.x,
-                y :transformedData.y,
-                name: 'Humedad Promedio',
+                x: transformedData.x,
+                y: transformedData.y,
+                name: "Humedad Promedio",
                 type: "scatter",
                 mode: "lines+markers",
                 marker: {
@@ -199,10 +119,10 @@ const Dashboard = () => {
                 },
               },
               {
-                x :transformedData.x,
-                y :transformedData.z,
-                name: 'Temperatura',
-                yaxis: "y2", 
+                x: transformedData.x,
+                y: transformedData.z,
+                name: "Temperatura",
+                yaxis: "y2",
                 type: "scatter",
                 mode: "lines+markers",
                 marker: {
@@ -241,94 +161,6 @@ const Dashboard = () => {
 
 export default Dashboard;
 
-const fetchHistoricData = async (deviceMac, urlBase) => {
-  try {
-    const response = await fetch(
-      `http://${urlBase}/data/device/${deviceMac}`
-    );
-    if (!response.ok) {
-      throw new Error("Error fetching historic data");
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching historic data:", error);
-    throw error;
-  }
-};
-
-const fetchAPIData = async (urlBase) => {
-  // {
-  //   "city_name": "Medellín",
-  //   "city_id": "3674962",
-  //   "temperature": 20.12,
-  //   "pressure": 1024,
-  //   "description": "light rain",
-  //   "icon": "10n",
-  //   "lon": -75.5636,
-  //   "lat": 6.2518,
-  //   "weather_api_id": "500",
-  //   "humidity": 96,
-  //   "wind_speed": 1.03,
-  //   "wind_deg": 0,
-  //   "country": "CO"
-  // }
-
-  try {
-    const response = await fetch(
-      `http://${urlBase}/api/data/`
-    );
-    if (!response.ok) {
-      throw new Error("Error fetching historic data");
-    }
-    const data = await response.json();
-    console.log(data)
-    return data;
-  } catch (error) {
-    console.error("Error fetching historic data:", error);
-    throw error;
-  }
-};
-
-const fetchSetPointData = async (deviceMac, urlBase) => {
-
-  try {
-    const response = await fetch(
-      `http://${urlBase}/setpoints/device/${deviceMac}`
-    );
-    if (!response.ok) {
-      throw new Error("Error fetching historic data");
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching historic data:", error);
-    throw error;
-  }
-};
-
-
-function transformData(historicData) {
-  let transformedData = {
-    x: [],
-    y: [],
-    z :[], 
-    color: [],
-  };
-
-  for (let i = 0; i < historicData.length; i++) {
-    let dataPoint = historicData[i];
-    let avgHumidity = (dataPoint.humidity_1 + dataPoint.humidity_2) / 2;
-    let temperature = dataPoint.temperature
-    let color = dataPoint.valve_satus === "ON" ? "rgb(0, 255, 0)" : "red";
-    transformedData.x.push(dataPoint.created_at);
-    transformedData.y.push(avgHumidity);
-    transformedData.z.push(temperature);
-    transformedData.color.push(color);
-  }
-
-  return transformedData;
-}
 
 function titleBox() {
   return (
