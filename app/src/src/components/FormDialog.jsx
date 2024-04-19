@@ -1,21 +1,17 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
 import { useState, Fragment } from "react";
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import Typography from '@mui/material/Typography';
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Typography from "@mui/material/Typography";
 
-
-export default function FormDialog({deviceMac}) {
+import { postSetpoint } from "../utils/api";
+export default function FormDialog({ deviceMac, urlBase, onSetpointUpdate }) {
   const [open, setOpen] = useState(false);
-
-
-     
-
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -28,43 +24,35 @@ export default function FormDialog({deviceMac}) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const setpoint = formData.get('setpoint');
-    console.log(`Setpoint: ${setpoint}, Device MAC: ${deviceMac}`);
+    const setpoint = formData.get("setpoint");
 
     try {
-        const response = await fetch('http://192.168.1.58:8123/setpoints/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            device_mac: deviceMac,
-            setpoint: setpoint
-          })
-        });
-        const data = await response.json();
-        console.log(data);
-      } catch (error) {
-        console.error('Error sending setpoint:', error);
-      }
-  
-      handleClose();
-    };
+      console.log(deviceMac, setpoint, urlBase);
+      const data = await postSetpoint(deviceMac, setpoint, urlBase);
+      console.log(data);
+      onSetpointUpdate(data.setpoint); // Callback to update setpoint in parent component
+    } catch (error) {
+      console.error("Error sending setpoint:", error);
+    }
+
+    handleClose();
+  };
   return (
     <Fragment>
-      <Button variant="outlined"  onClick={handleClickOpen}
-      
-      >
-      <Typography variant="h6" fontSize="1.25rem" sx={{ textTransform: 'none' , color: "#000" }}>
-      Ajustar setpoint
+      <Button variant="outlined" onClick={handleClickOpen}>
+        <Typography
+          variant="h6"
+          fontSize="1.25rem"
+          sx={{ textTransform: "none", color: "#000" }}
+        >
+          Ajustar setpoint
         </Typography>
-      
       </Button>
       <Dialog
         open={open}
         onClose={handleClose}
         PaperProps={{
-          component: 'form',
+          component: "form",
           onSubmit: handleSubmit,
         }}
       >
