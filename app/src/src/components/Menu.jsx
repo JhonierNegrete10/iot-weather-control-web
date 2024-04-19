@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import * as React from "react";
+import { useState, useEffect } from "react";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
@@ -7,26 +7,23 @@ import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
+import { fetchDevices } from "../utils/api";
 
-export default function SimpleListMenu({urlBase}) {
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
-  const [options, setOptions] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState(null);
+export default function SimpleListMenu({ urlBase, onDeviceSelect }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [options, setOptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const open = Boolean(anchorEl);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`http://${urlBase}/device/`);
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const data = await response.json();
-        setOptions(data.map((device) => device.device_mac));
+        const devices = await fetchDevices(urlBase);
+        setOptions(devices.map((device) => device.device_mac));
       } catch (error) {
         setError(error.message);
       } finally {
@@ -35,7 +32,7 @@ export default function SimpleListMenu({urlBase}) {
     };
 
     fetchData();
-  },  [urlBase]);
+  }, [urlBase]);
 
   const handleClickListItem = (event) => {
     setAnchorEl(event.currentTarget);
@@ -44,6 +41,7 @@ export default function SimpleListMenu({urlBase}) {
   const handleMenuItemClick = (event, index) => {
     setSelectedIndex(index);
     setAnchorEl(null);
+    onDeviceSelect(options[index]); // Callback to update deviceMac in parent component
   };
 
   const handleClose = () => {
@@ -51,20 +49,17 @@ export default function SimpleListMenu({urlBase}) {
   };
 
   return (
-    <div
-    style={{ padding: '20px' }}>
-        
+    <div style={{ padding: "20px" }}>
       {loading ? (
         <CircularProgress />
       ) : error ? (
         <Alert severity="error">{error}</Alert>
       ) : (
         <List
-        // borderRadius="20px"
+          // borderRadius="20px"
           component="nav"
           aria-label="Device settings"
-          sx={{ borderRadius:"20px", 
-            bgcolor: "background.paper" }}
+          sx={{ borderRadius: "20px", bgcolor: "background.paper" }}
         >
           <ListItemButton
             id="lock-button"
@@ -82,7 +77,6 @@ export default function SimpleListMenu({urlBase}) {
         </List>
       )}
       <Menu
-
         id="lock-menu"
         anchorEl={anchorEl}
         open={open}
