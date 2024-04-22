@@ -29,7 +29,7 @@ const Dashboard = () => {
   const urlBase = "192.168.1.12:8123";
 
   const colors = tokens("dark");
-  const [deviceMac, setDeviceMac] = useState("00:B0:D0:63:C2:26");
+  const [deviceMac, setDeviceMac] = useState("");
   const { historicData, boxData, error } = useDeviceData(deviceMac, urlBase);
 
   const handleSetpointUpdate = (newSetpoint) => {

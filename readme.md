@@ -9,7 +9,7 @@ bun run dev
 ```
 
 `bunx --bun vite --host 0.0.0.0`
-`bun --hot run bunx --bun vite --host 0.0.0.0`
+`bun run bunx --bun vite --host 0.0.0.0`
 
 `VITE v5.2.8  ready in 995 ms`
 
