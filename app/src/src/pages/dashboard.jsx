@@ -26,7 +26,7 @@ import { useDeviceData } from "../hooks/useDeviceData";
 import { postSetpoint } from "../utils/api";
 
 const Dashboard = () => {
-  const urlBase = "192.168.1.12:8123";
+  const urlBase = "0.0.0.0:8123";
 
   const colors = tokens("dark");
   const [deviceMac, setDeviceMac] = useState("");
@@ -114,7 +114,7 @@ const Dashboard = () => {
                 type: "scatter",
                 mode: "lines+markers",
                 marker: {
-                  size: 10,
+                  size: 4,
                   color: transformedData.color,
                 },
               },
@@ -127,7 +127,7 @@ const Dashboard = () => {
                 mode: "lines+markers",
                 marker: {
                   size: 10,
-                  color: "blue",
+                  color: "RGB(0, 190, 255)",
                 },
               },
             ]}
