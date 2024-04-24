@@ -13,6 +13,10 @@ bun run dev
 
 `VITE v5.2.8  ready in 995 ms`
 
+## Docker commands
+
+docker-compose up --build
+
 ## Libraries
 
 * bun add @mui/material @emotion/react @emotion/styled

@@ -11,16 +11,18 @@ WORKDIR /app
 COPY ./app/. .
 
 # # Instalar las dependencias
-CMD [ "bun","install" ]
+# RUN bun install
 
 
 # # Exponer el puerto en el que se ejecutará la aplicación
-# EXPOSE 5173
-# EXPOSE 5174
-# EXPOSE 3000
-# EXPOSE 4173
+EXPOSE 5173
+EXPOSE 5174
+EXPOSE 3000
+EXPOSE 4173
+EXPOSE 80
 
 
 # Comando
-ENTRYPOINT ["tail", "-f", "/dev/null"]
+# ENTRYPOINT ["tail", "-f", "/dev/null"]
+ENTRYPOINT ["bun", "vite", "preview", "--host", "0.0.0.0", "--port", "80"]
 # ENTRYPOINT ["bun","install;","bun","run", "bunx", "--bun", "vite", "--host", "0.0.0.0"]
