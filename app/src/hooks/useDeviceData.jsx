@@ -6,8 +6,11 @@ import {
   fetchSetPointData,
 } from "../utils/api";
 import useWebSocket from "./useWebSocket";
+import { APP_STATUS } from "../pages/dashboard";
 
-export const useDeviceData = (deviceMac, urlBase) => {
+// refactorizar para darle un use estater a cada elemento del box data, modularizar cada subelemento
+
+export const useDeviceData = (deviceMac, urlBase, appStatus, setAppStatus) => {
   const [historicData, setHistoricData] = useState([]);
   const [boxData, setBoxData] = useState([]);
   const [error, setError] = useState(null);
@@ -40,9 +43,11 @@ export const useDeviceData = (deviceMac, urlBase) => {
   };
   //
   const fetchDataFromAPI = async () => {
+    let dataApi = {};
+    let dataSetpoint = {};
     try {
-      const dataApi = await fetchAPIData(urlBase);
-      const dataSetpoint = await fetchSetPointData(deviceMac, urlBase);
+      dataApi = await fetchAPIData(urlBase);
+      dataSetpoint = await fetchSetPointData(deviceMac, urlBase);
 
       return {
         apiTemperature: dataApi.temperature,
@@ -50,7 +55,10 @@ export const useDeviceData = (deviceMac, urlBase) => {
       };
     } catch (error) {
       console.error("Error fetching data:", error);
-      return { apiTemperature: null, setpoint: null };
+      return {
+        apiTemperature: dataApi?.temperature,
+        setpoint: dataSetpoint?.setpoint,
+      };
     }
   };
 
@@ -73,30 +81,47 @@ export const useDeviceData = (deviceMac, urlBase) => {
     updateBoxData([newData]);
   };
 
-  useWebSocket(`ws://${urlBase}/data/ws/${deviceMac}`, handleWebSocketMessage);
+
+
+  useWebSocket(`ws://${urlBase}/data/ws/${deviceMac}`, handleWebSocketMessage, appStatus, setAppStatus);
+
+
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        let data = await fetchHistoricData(deviceMac, urlBase);
-        if (data.length > 10) {
-          data = data.slice(data.length - 10);
-        }
-        setHistoricData(data);
-        await fetchDataFromAPI().then(({ apiTemperature, setpoint }) => {
-          if (data.length > 0) {
-            data[data.length - 1].apiTemperature = apiTemperature;
-            data[data.length - 1].setpoint = setpoint;
-            console.log("data In ", data[data.length - 1])
+      if (appStatus == "devices_loaded") {
+
+        try {
+          let data = await fetchHistoricData(deviceMac, urlBase);
+
+          if (data.length == 0) {
+            return null
           }
-        });
-        updateBoxData(data);
-      } catch (error) {
-        setError(error.message);
+          if (data.length > 10) {
+            data = data.slice(data.length - 10);
+          }
+          setHistoricData(data);
+
+          setAppStatus(APP_STATUS.HISTORICAL_DATA_LOADED);
+
+          await fetchDataFromAPI().then(({ apiTemperature, setpoint }) => {
+            if (data.length > 0) {
+              data[data.length - 1].apiTemperature = apiTemperature;
+              data[data.length - 1].setpoint = setpoint;
+              console.log("data In ", data[data.length - 1]);
+            }
+          });
+          updateBoxData(data);
+
+          console.log("app status post fecth hitoric data ", appStatus)
+        } catch (error) {
+          setError(error.message);
+        }
       }
     };
 
     fetchData();
+    console.log("app status post fecth post boxdata  ", appStatus)
   }, [deviceMac, urlBase]);
 
   return { historicData, boxData, error };

@@ -8,30 +8,41 @@ import Menu from "@mui/material/Menu";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import { fetchDevices } from "../utils/api";
+import { APP_STATUS } from "../pages/dashboard";
 
-export default function SimpleListMenu({ urlBase, onDeviceSelect }) {
+export default function SimpleListMenu({ urlBase, onDeviceSelect, appStatus, setAppStatus, onError }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [options, setOptions] = useState([]);
+  const [optionsDescriptions, setOptionsDescriptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  let attempt = 0
   const open = Boolean(anchorEl);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchSetDevices = async () => {
       setLoading(true);
       setError(null);
-      try {
-        const devices = await fetchDevices(urlBase);
-        setOptions(devices.map((device) => device.device_mac));
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
+      attempt = attempt + 1
+      if (appStatus == "init") {
+        try {
+          const devices = await fetchDevices(urlBase);
+          setOptions(devices.map((device) => device.device_mac));
+          setOptionsDescriptions(devices.map((device) => device.description));
+          setAppStatus(APP_STATUS.PRE_DEVICES_LOADED)
+
+        } catch (error) {
+          setError(error.message);
+          onError();
+        } finally {
+          setLoading(false);
+          setError(null);
+        }
       }
     };
 
-    fetchData();
+    fetchSetDevices();
   }, [urlBase]);
 
   const handleClickListItem = (event) => {
@@ -92,7 +103,7 @@ export default function SimpleListMenu({ urlBase, onDeviceSelect }) {
             selected={index === selectedIndex}
             onClick={(event) => handleMenuItemClick(event, index)}
           >
-            {option}
+            {`${option} : ${optionsDescriptions[index]}`}
           </MenuItem>
         ))}
       </Menu>

@@ -29,7 +29,7 @@ export default function FormDialog({ deviceMac, urlBase, onSetpointUpdate }) {
     try {
       console.log(deviceMac, setpoint, urlBase);
       const data = await postSetpoint(deviceMac, setpoint, urlBase);
-      console.log(data);
+      console.log("post set point ", data);
       onSetpointUpdate(data.setpoint); // Callback to update setpoint in parent component
     } catch (error) {
       console.error("Error sending setpoint:", error);

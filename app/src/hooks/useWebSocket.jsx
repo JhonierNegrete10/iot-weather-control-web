@@ -1,32 +1,40 @@
 import { useState, useEffect } from "react";
 
-const useWebSocket = (url, onMessage) => {
+const useWebSocket = (url, onMessage, appStatus, setAppStatus) => {
   const [webSocket, setWebSocket] = useState(null);
 
   useEffect(() => {
-    if (!webSocket) {
-      const ws = new WebSocket(url);
-      ws.onopen = () => {
-        console.log("WebSocket connected");
-      };
+    const connectWebSocket = async () => {
+      
+      try {
+        const ws = new WebSocket(url);
+        ws.onopen = () => {
+          console.log("-- ws: WebSocket connected ", url);
+        };
 
-      ws.onclose = () => {
-        console.log("WebSocket disconnected");
-        ws.send("disconnect");
+        ws.onclose = () => {
+          console.log("-- ws: WebSocket disconnected");
+          ws.send("disconnect");
+          setWebSocket(null);
+        };
+
+        setWebSocket(ws);
+      } catch (error) {
+        console.error("Error connecting to WebSocket:", error);
         setWebSocket(null);
-      };
-
-      setWebSocket(ws);
+      }
+    }
+    console.log("-- ws:", appStatus)
+    if (appStatus == "historical_data_loaded"){
+    if (!webSocket) {
+      connectWebSocket();
     } else {
+
       webSocket.onmessage = (event) => {
         onMessage && onMessage(JSON.parse(event.data));
       };
-    //   return () => {
-    //     webSocket.close();
-    //   };
-      
     }
-
+    }
   }, [url, onMessage, webSocket]);
 
   return webSocket;
