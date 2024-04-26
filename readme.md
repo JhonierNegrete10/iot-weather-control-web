@@ -11,11 +11,13 @@ bun run dev
 `bunx --bun vite --host 0.0.0.0`
 `bun run bunx --bun vite --host 0.0.0.0`
 
+`bun vite preview --host 0.0.0.0 --port 80`
+
 `VITE v5.2.8  ready in 995 ms`
 
 ## Docker commands
 
-docker-compose up --build
+docker compose up --build -d
 
 ## Libraries
 

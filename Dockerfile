@@ -8,7 +8,7 @@ WORKDIR /app
 
 
 # Copiar el resto de los archivos de la aplicación
-COPY ./app/. .
+# COPY ./app/. .
 
 # # Instalar las dependencias
 # RUN bun install
@@ -23,6 +23,7 @@ EXPOSE 80
 
 
 # Comando
+ENTRYPOINT ["bun", "run", "dev"]
 # ENTRYPOINT ["tail", "-f", "/dev/null"]
-ENTRYPOINT ["bun", "vite", "preview", "--host", "0.0.0.0", "--port", "80"]
+# ENTRYPOINT ["bun", "vite", "preview", "--host", "0.0.0.0", "--port", "80"]
 # ENTRYPOINT ["bun","install;","bun","run", "bunx", "--bun", "vite", "--host", "0.0.0.0"]
