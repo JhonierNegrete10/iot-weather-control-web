@@ -3,8 +3,10 @@
 
 #BUN
 FROM oven/bun:latest
-WORKDIR /app
+RUN apt-get update 
+RUN apt-get install -y net-tools iputils-ping curl git
 
+WORKDIR /app
 
 
 # Copiar el resto de los archivos de la aplicación
@@ -23,7 +25,8 @@ EXPOSE 80
 
 
 # Comando
-ENTRYPOINT ["bun", "run", "dev"]
+#ENTRYPOINT ["bun", "run", "dev"]
+ENTRYPOINT ["/bin/sh", "-c", "./scripts/check_node_modules.sh"]
 # ENTRYPOINT ["tail", "-f", "/dev/null"]
 # ENTRYPOINT ["bun", "vite", "preview", "--host", "0.0.0.0", "--port", "80"]
 # ENTRYPOINT ["bun","install;","bun","run", "bunx", "--bun", "vite", "--host", "0.0.0.0"]
