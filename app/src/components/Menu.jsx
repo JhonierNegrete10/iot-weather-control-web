@@ -60,7 +60,7 @@ export default function SimpleListMenu({ urlBase, onDeviceSelect, appStatus, set
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "20px", display: "flex", justifyContent: "center", alignItems: "center" }}>
       {loading ? (
         <CircularProgress />
       ) : error ? (
