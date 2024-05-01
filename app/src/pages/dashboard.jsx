@@ -1,31 +1,18 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-// /* eslint-disable no-unused-vars */
-/* eslint-disable react/prop-types */
 import { useState } from "react";
 import { tokens } from "../theme";
-// Plotly
-import Plot from "react-plotly.js";
-// @mui
 import { Box, Typography, Grid } from "@mui/material";
-// Custom Components
 import SimpleListMenu from "../components/Menu";
 import FormDialog from "../components/FormDialog";
 import UrlBaseFormDialog from "../components/UrlBaseFormDialog";
 import TitleBox from "../components/TittleBox";
 import DataRow from "../components/DataRow";
-
+import HistoricalDataTable from '../components/HistoricalDataTable';
+import CustomPlot from '../components/CustomPlot';
 import { transformData } from "../utils/dataTransformations";
 import { useDeviceData } from "../hooks/useDeviceData";
+import { APP_STATUS } from "../pages/DasboardConstants";
 
-export const APP_STATUS = {
-  INIT: "init",
-  ERROR_URL: "error_url",
-  PRE_DEVICES_LOADED: "pre_devices_loaded",
-  DEVICES_LOADED: "devices_loaded",
-  HISTORICAL_DATA_LOADED: "historical_data_loaded",
-}
-
-const Dashboard = () => {
+export const Dashboard = () => {
   const [appStatus, setAppStatus] = useState(APP_STATUS.INIT);
   const [openDialogUrlBase, setOpenDialogUrlBase] = useState(false);
   const [urlBase, setUrlBase] = useState("10.42.0.1:8123");
@@ -45,17 +32,16 @@ const Dashboard = () => {
     setOpenDialogUrlBase(false);
     if (newUrlbase) {
       setUrlBase(newUrlbase);
-      setAppStatus(APP_STATUS.INIT)
+      setAppStatus(APP_STATUS.INIT);
     }
   };
   //  <--END URL base Change -->
-
   const handleDeviceSelect = (newDeviceMac) => {
     //  si es vacio, agrega mensaje diciendo, añade un device al backend
     setDeviceMac(newDeviceMac);
-    setAppStatus(APP_STATUS.DEVICES_LOADED)
-    console.log("data handleDeviceSelect:", newDeviceMac)
-    console.log("app status handleDeviceSelect :", appStatus)
+    setAppStatus(APP_STATUS.DEVICES_LOADED);
+    console.log("data handleDeviceSelect:", newDeviceMac);
+    console.log("app status handleDeviceSelect :", appStatus);
   };
   const transformedData = transformData(historicData);
 
@@ -84,8 +70,7 @@ const Dashboard = () => {
           ></SimpleListMenu>
           <UrlBaseFormDialog
             open={openDialogUrlBase}
-            onClose={handleDialogClose}
-          />
+            onClose={handleDialogClose} />
         </Grid>
         <Grid item xs={12} sm={4} style={{ display: 'flex', justifyContent: 'center' }}>
           <Box
@@ -95,7 +80,7 @@ const Dashboard = () => {
             justifyContent="space-between"
             alignItems="center"
           >
-            <Box padding={{ xs: '10px', sm: '20px' }}  borderRadius="20px" backgroundColor="#fff">
+            <Box padding={{ xs: '10px', sm: '20px' }} borderRadius="20px" backgroundColor="#fff">
               <FormDialog
                 deviceMac={deviceMac}
                 urlBase={urlBase}
@@ -131,60 +116,9 @@ const Dashboard = () => {
         </Box>
         <Box marginTop="20px" display="flex" justifyContent="center">
           {/* PLOT  */}
-
-          {/* //! aqui cambiar por historic data from */}
-
-          <Plot
-            data={[
-              {
-                x: transformedData.x,
-                y: transformedData.y,
-                name: "Humedad Promedio",
-                type: "scatter",
-                mode: "lines+markers",
-                marker: {
-                  size: 6,
-                  color: transformedData.color,
-                },
-                line: { shape: "spline" }
-              },
-              {
-                x: transformedData.x,
-                y: transformedData.z,
-                name: "Temperatura",
-                yaxis: "y2",
-                type: "scatter",
-                mode: "lines+markers",
-                marker: {
-                  size: 6,
-                  color: "RGB(0, 190, 255)",
-                },
-                line: { shape: "spline" }
-              },
-            ]}
-            layout={{
-              plot_bgcolor: "#fff",
-              paper_bgcolor: "#fff",
-              xaxis: {
-                title: "Tiempo", // Etiqueta del eje X
-              },
-              yaxis: {
-                title: "Humedad Promedio", // Etiqueta del eje Y
-                rangemode: "tozero",
-              },
-              yaxis2: {
-                title: "Temperatura", // Etiqueta del eje y2
-                overlaying: "y",
-                rangemode: "tozero",
-                side: "right", // Ubicar el eje y2 a la izquierda
-              },
-              font: {
-                color: "#000",
-              },
-              name: "Humedad promedio",
-            }}
-          />
+          <CustomPlot transformedData={transformedData} />
         </Box>
+        <HistoricalDataTable data={historicData} />
       </Box>
     </Box>
   );

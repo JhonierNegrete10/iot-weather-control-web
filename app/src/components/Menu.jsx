@@ -8,7 +8,7 @@ import Menu from "@mui/material/Menu";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import { fetchDevices } from "../utils/api";
-import { APP_STATUS } from "../pages/dashboard";
+import { APP_STATUS } from"../pages/DasboardConstants";
 
 export default function SimpleListMenu({ urlBase, onDeviceSelect, appStatus, setAppStatus, onError }) {
   const [anchorEl, setAnchorEl] = useState(null);

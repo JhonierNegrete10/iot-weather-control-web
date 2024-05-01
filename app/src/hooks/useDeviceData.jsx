@@ -5,7 +5,7 @@ import {
   fetchSetPointData,
 } from "../utils/api";
 import useWebSocket from "./useWebSocket";
-import { APP_STATUS } from "../pages/dashboard";
+import { APP_STATUS } from "../pages/DasboardConstants";
 
 const nData = 20;
 
