@@ -10,7 +10,7 @@ const TitleBox = () => {
         color="#F5F5DC"
         textShadow="2px 2px 4px rgba(0, 0, 0, 0.5)"
       >
-        IOT WEATHER CONTROL HIDROPONICO
+        HIDRÓPONICO IOT
       </Typography>
     </Box>
   );

@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import {
   fetchHistoricData,
@@ -8,23 +7,23 @@ import {
 import useWebSocket from "./useWebSocket";
 import { APP_STATUS } from "../pages/dashboard";
 
-// refactorizar para darle un use estater a cada elemento del box data, modularizar cada subelemento
+const nData = 20;
 
 export const useDeviceData = (deviceMac, urlBase, appStatus, setAppStatus) => {
   const [historicData, setHistoricData] = useState([]);
   const [boxData, setBoxData] = useState([]);
   const [error, setError] = useState(null);
-
   const updateBoxData = (data) => {
     if (data.length > 0) {
-      let lastData = data[data.length - 1];
-      console.log("lastData ", lastData);
+      let lastData = data[0];
+      // console.log("lastData ", lastData);
+      const formattedTemperature = parseFloat(lastData.temperature).toFixed(2);
       setBoxData([
         {
           subtitle1: "Valor sensado",
-          value1: `${lastData.temperature} °C`,
+          value1: `${formattedTemperature} °C`,
           subtitle2: "Valor API",
-          value2: `${lastData.apiTemperature} °C`,
+          value2: lastData.apiTemperature ?`${lastData.apiTemperature} °C`: "",
         },
         {
           subtitle1: "Sensor 1",
@@ -47,24 +46,23 @@ export const useDeviceData = (deviceMac, urlBase, appStatus, setAppStatus) => {
     let dataSetpoint = {};
     try {
       dataApi = await fetchAPIData(urlBase);
-      dataSetpoint = await fetchSetPointData(deviceMac, urlBase);
-
-      return {
-        apiTemperature: dataApi.temperature,
-        setpoint: dataSetpoint.setpoint,
-      };
     } catch (error) {
-      console.error("Error fetching data:", error);
-      return {
-        apiTemperature: dataApi?.temperature,
-        setpoint: dataSetpoint?.setpoint,
-      };
+      console.error("Error fetchAPIData data:", error);
     }
+    try {
+      dataSetpoint = await fetchSetPointData(deviceMac, urlBase);
+    } catch (error) {
+      console.error("Error fetchSetPointData data:", error);
+    }
+    return {
+      apiTemperature: dataApi?.temperature,
+      setpoint: dataSetpoint?.setpoint,
+    };
   };
 
   //
   const handleWebSocketMessage = async (newData) => {
-    console.log("accepting the message ", newData);
+    console.log("accepting  the message ", newData);
 
     const { apiTemperature, setpoint } = await fetchDataFromAPI();
 
@@ -72,10 +70,10 @@ export const useDeviceData = (deviceMac, urlBase, appStatus, setAppStatus) => {
     newData.setpoint = setpoint;
 
     setHistoricData((prevData) => {
-      if (prevData.length > 10) {
-        prevData = prevData.slice(prevData.length - 10);
+      if (prevData.length > nData) {
+        prevData = prevData.slice(prevData.length - nData);
       }
-      return [...prevData, newData];
+      return [newData, ...prevData];
     });
 
     updateBoxData([newData]);
@@ -97,18 +95,19 @@ export const useDeviceData = (deviceMac, urlBase, appStatus, setAppStatus) => {
           if (data.length == 0) {
             return null
           }
-          if (data.length > 10) {
-            data = data.slice(data.length - 10);
+          if (data.length > nData) {
+            data = data.slice(data.length - nData);
           }
           setHistoricData(data);
 
           setAppStatus(APP_STATUS.HISTORICAL_DATA_LOADED);
 
+          // console.log("data In ", data.map((item, index) => (`id: ${item.id} - index: ${index}` )));
           await fetchDataFromAPI().then(({ apiTemperature, setpoint }) => {
             if (data.length > 0) {
-              data[data.length - 1].apiTemperature = apiTemperature;
-              data[data.length - 1].setpoint = setpoint;
-              console.log("data In ", data[data.length - 1]);
+              data[0].apiTemperature = apiTemperature;
+              data[0].setpoint = setpoint;
+              // console.log("data In ", data[0]);
             }
           });
           updateBoxData(data);
