@@ -1,6 +1,6 @@
 # Vite Bun React Project
 
-`bun create vite my-vue-app --template react`
+`bun create vite app --template react`
 
 ```sh
 cd src
